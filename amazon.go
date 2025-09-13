@@ -7,11 +7,14 @@ import (
 	"github.com/imroc/req/v3"
 )
 
+const (
+	PROD_API_ENDPOINT = "https://sellingpartnerapi-eu.amazon.com"
+)
 // AmazonAuthTokenResponse represents the response from the Amazon OAuth token endpoint
 type AmazonAuthTokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	TokenType    string `json:"token_type"`
-	ExpiresIn    int64    `json:"expires_in"`
+	ExpiresIn    int64  `json:"expires_in"`
 	RefreshToken string `json:"refresh_token,omitempty"`
 }
 
@@ -78,22 +81,22 @@ type BatchItemOffersResponse struct {
 			Date           string `json:"Date"`
 		} `json:"headers"`
 		Status struct {
-			StatusCode   int64    `json:"statusCode"`
+			StatusCode   int64  `json:"statusCode"`
 			ReasonPhrase string `json:"reasonPhrase"`
 		} `json:"status"`
 		Body struct {
 			Payload struct {
 				MarketplaceId string `json:"marketplaceId"`
 				Identifier    struct {
-					ASIN         string `json:"ASIN"`
+					ASIN          string `json:"ASIN"`
 					MarketplaceId string `json:"MarketplaceId"`
 					ItemCondition string `json:"ItemCondition"`
 				} `json:"Identifier"`
-				ASIN         string `json:"ASIN"`
-				Summary      *struct {
+				ASIN    string `json:"ASIN"`
+				Summary *struct {
 					BuyBoxPrices []struct {
-						Condition    string `json:"condition"`
-						LandedPrice  struct {
+						Condition   string `json:"condition"`
+						LandedPrice struct {
 							CurrencyCode string  `json:"CurrencyCode"`
 							Amount       float64 `json:"Amount"`
 						} `json:"LandedPrice"`
@@ -109,7 +112,7 @@ type BatchItemOffersResponse struct {
 					BuyBoxEligibleOffers []struct {
 						Condition          string `json:"condition"`
 						FulfillmentChannel string `json:"fulfillmentChannel"`
-						OfferCount         int64    `json:"OfferCount"`
+						OfferCount         int64  `json:"OfferCount"`
 					} `json:"BuyBoxEligibleOffers"`
 					LowestPrices []struct {
 						Condition          string `json:"condition"`
@@ -130,28 +133,28 @@ type BatchItemOffersResponse struct {
 					NumberOfOffers []struct {
 						Condition          string `json:"condition"`
 						FulfillmentChannel string `json:"fulfillmentChannel"`
-						OfferCount         int64    `json:"OfferCount"`
+						OfferCount         int64  `json:"OfferCount"`
 					} `json:"NumberOfOffers"`
 					TotalOfferCount int64 `json:"TotalOfferCount"`
 					SalesRankings   []struct {
-						Rank              int64    `json:"Rank"`
+						Rank              int64  `json:"Rank"`
 						ProductCategoryId string `json:"ProductCategoryId"`
 					} `json:"SalesRankings"`
 				} `json:"Summary"`
 				Offers []struct {
 					ShippingTime struct {
-						MinimumHours     int64    `json:"minimumHours"`
-						MaximumHours     int64    `json:"maximumHours"`
+						MinimumHours     int64  `json:"minimumHours"`
+						MaximumHours     int64  `json:"maximumHours"`
 						AvailabilityType string `json:"availabilityType"`
 					} `json:"ShippingTime"`
 					IsFulfilledByAmazon bool `json:"IsFulfilledByAmazon"`
-					ListingPrice struct {
+					ListingPrice        struct {
 						CurrencyCode string  `json:"CurrencyCode"`
 						Amount       float64 `json:"Amount"`
 					} `json:"ListingPrice"`
-					IsBuyBoxWinner      bool   `json:"IsBuyBoxWinner"`
-					SellerId            string `json:"SellerId"`
-					Shipping            struct {
+					IsBuyBoxWinner bool   `json:"IsBuyBoxWinner"`
+					SellerId       string `json:"SellerId"`
+					Shipping       struct {
 						CurrencyCode string  `json:"CurrencyCode"`
 						Amount       float64 `json:"Amount"`
 					} `json:"Shipping"`
@@ -161,7 +164,7 @@ type BatchItemOffersResponse struct {
 					SubCondition         string `json:"SubCondition"`
 					IsFeaturedMerchant   bool   `json:"IsFeaturedMerchant"`
 					SellerFeedbackRating struct {
-						FeedbackCount               int64 `json:"FeedbackCount"`
+						FeedbackCount                int64   `json:"FeedbackCount"`
 						SellerPositiveFeedbackRating float64 `json:"SellerPositiveFeedbackRating"`
 					} `json:"SellerFeedbackRating"`
 					PrimeInformation struct {
@@ -192,12 +195,35 @@ func (sdk *AmazonSDK) GetBatchItemOffers(ctx context.Context, accessToken string
 		SetHeader("Content-Type", "application/json").
 		SetBody(&payload).
 		SetSuccessResult(&resp).
-		Post("https://sellingpartnerapi-eu.amazon.com/batches/products/pricing/v0/itemOffers")
+		Post(PROD_API_ENDPOINT + "/batches/products/pricing/v0/itemOffers")
 	if err != nil {
 		return nil, err
 	}
 	if !r.IsSuccessState() {
 		return nil, fmt.Errorf("failed to get batch item offers: %s", r.String())
+	}
+	return &resp, nil
+}
+// GetCatalogItems calls the Amazon SP API Catalog Items endpoint
+func (sdk *AmazonSDK) GetCatalogItems(ctx context.Context, accessToken string, params CatalogItemsRequestParams) (*CatalogItemsResponse, error) {
+	var resp CatalogItemsResponse
+	r, err := req.C().R().
+		SetContext(ctx).
+		SetHeader("x-amz-access-token", accessToken).
+		SetHeader("user-agent", "elevate-seller").
+		SetQueryParams(map[string]string{
+			"marketplaceIds":  params.MarketplaceIds,
+			"identifiersType": params.IdentifiersType,
+			"identifiers":     params.Identifiers,
+			"includedData":    params.IncludedData,
+		}).
+		SetSuccessResult(&resp).
+		Get(PROD_API_ENDPOINT + "/catalog/2022-04-01/items")
+	if err != nil {
+		return nil, err
+	}
+	if !r.IsSuccessState() {
+		return nil, fmt.Errorf("failed to get catalog items: %s", r.String())
 	}
 	return &resp, nil
 }
