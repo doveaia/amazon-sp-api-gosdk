@@ -262,3 +262,46 @@ func (sdk *AmazonSDK) GetFeesEstimate(ctx context.Context, accessToken string, p
 	}
 	return resp, nil
 }
+
+// GetListingsRestrictions calls the Amazon SP API Listings Restrictions endpoint.
+//
+// It retrieves listing restrictions for a product, which helps determine if you can
+// list a product and what actions are needed if listing is restricted.
+//
+// Example usage:
+//
+//	params := ListingsRestrictionsRequestParams{
+//		ASIN:           "B07TTY5YS8",
+//		ConditionType:  "new_new",
+//		SellerID:       "AJI6WKJB10KAL",
+//		MarketplaceIds: "A13V1IB3VIYZZH",
+//	}
+//	resp, err := sdk.GetListingsRestrictions(ctx, accessToken, params)
+//
+// See Amazon documentation for details:
+// https://developer-docs.amazon.com/sp-api/docs/listings-restrictions-api-v2021-08-01-reference
+//
+// The accessToken must be a valid SP-API access token. All parameters are required.
+// Returns a ListingsRestrictionsResponse or an error.
+func (sdk *AmazonSDK) GetListingsRestrictions(ctx context.Context, accessToken string, params ListingsRestrictionsRequestParams) (*ListingsRestrictionsResponse, error) {
+	var resp ListingsRestrictionsResponse
+	r, err := req.C().R().
+		SetContext(ctx).
+		SetHeader("x-amz-access-token", accessToken).
+		SetHeader("user-agent", "elevate-seller").
+		SetQueryParams(map[string]string{
+			"asin":           params.ASIN,
+			"conditionType":  params.ConditionType,
+			"sellerId":       params.SellerID,
+			"marketplaceIds": params.MarketplaceIds,
+		}).
+		SetSuccessResult(&resp).
+		Get(PROD_API_ENDPOINT + "/listings/2021-08-01/restrictions")
+	if err != nil {
+		return nil, err
+	}
+	if !r.IsSuccessState() {
+		return nil, fmt.Errorf("failed to get listings restrictions: %s", r.String())
+	}
+	return &resp, nil
+}
