@@ -134,3 +134,38 @@ type CatalogItem struct {
 		WebsiteDisplayGroupName string `json:"websiteDisplayGroupName"`
 	} `json:"summaries"`
 }
+
+// ListingsRestrictionsRequestParams holds the query parameters for GetListingsRestrictions
+type ListingsRestrictionsRequestParams struct {
+	ASIN           string // required
+	ConditionType  string // required, e.g. "new_new"
+	SellerID       string // required
+	MarketplaceIds string // required
+}
+
+// ListingsRestrictionsResponse represents the response from the GetListingsRestrictions API
+type ListingsRestrictionsResponse struct {
+	Restrictions []Restriction `json:"restrictions"`
+}
+
+// Restriction represents a single restriction for a listing
+type Restriction struct {
+	MarketplaceId string   `json:"marketplaceId"`
+	ConditionType string   `json:"conditionType"`
+	Reasons       []Reason `json:"reasons"`
+}
+
+// Reason represents a reason for a listing restriction
+type Reason struct {
+	ReasonCode string `json:"reasonCode"`
+	Message    string `json:"message"`
+	Links      []Link `json:"links,omitempty"`
+}
+
+// Link represents a link resource in a restriction reason
+type Link struct {
+	Resource string `json:"resource"`
+	Verb     string `json:"verb"`
+	Title    string `json:"title"`
+	Type     string `json:"type"`
+}
