@@ -10,6 +10,7 @@ import (
 const (
 	PROD_API_ENDPOINT = "https://sellingpartnerapi-eu.amazon.com"
 )
+
 // AmazonAuthTokenResponse represents the response from the Amazon OAuth token endpoint
 type AmazonAuthTokenResponse struct {
 	AccessToken  string `json:"access_token"`
@@ -204,6 +205,7 @@ func (sdk *AmazonSDK) GetBatchItemOffers(ctx context.Context, accessToken string
 	}
 	return &resp, nil
 }
+
 // GetCatalogItems calls the Amazon SP API Catalog Items endpoint
 func (sdk *AmazonSDK) GetCatalogItems(ctx context.Context, accessToken string, params CatalogItemsRequestParams) (*CatalogItemsResponse, error) {
 	var resp CatalogItemsResponse
@@ -226,4 +228,37 @@ func (sdk *AmazonSDK) GetCatalogItems(ctx context.Context, accessToken string, p
 		return nil, fmt.Errorf("failed to get catalog items: %s", r.String())
 	}
 	return &resp, nil
+}
+
+// GetFeesEstimate calls the Amazon SP API Fees Estimate endpoint.
+//
+// It takes a slice of FeesEstimateRequestPayload and returns a slice of FeesEstimateResponsePayload.
+//
+// Example usage:
+//
+//	reqs := []FeesEstimateRequestPayload{ ... }
+//	resp, err := sdk.GetFeesEstimate(ctx, accessToken, reqs)
+//
+// See Amazon documentation for details:
+// https://developer-docs.amazon.com/sp-api/docs/products-fees-api-v0-reference#post-feesestimate
+//
+// The accessToken must be a valid SP-API access token. The payload must match the API schema.
+// Returns a slice of FeesEstimateResponsePayload or an error.
+func (sdk *AmazonSDK) GetFeesEstimate(ctx context.Context, accessToken string, payload []FeesEstimateRequestPayload) ([]FeesEstimateResponsePayload, error) {
+	var resp []FeesEstimateResponsePayload
+	r, err := req.C().R().
+		SetContext(ctx).
+		SetHeader("x-amz-access-token", accessToken).
+		SetHeader("user-agent", "elevate-seller").
+		SetHeader("Content-Type", "application/json").
+		SetBody(&payload).
+		SetSuccessResult(&resp).
+		Post(PROD_API_ENDPOINT + "/products/fees/v0/feesEstimate")
+	if err != nil {
+		return nil, err
+	}
+	if !r.IsSuccessState() {
+		return nil, fmt.Errorf("failed to get fees estimate: %s", r.String())
+	}
+	return resp, nil
 }
