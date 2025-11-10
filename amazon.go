@@ -10,6 +10,7 @@ import (
 const (
 	PROD_API_ENDPOINT = "https://sellingpartnerapi-eu.amazon.com"
 )
+
 // AmazonAuthTokenResponse represents the response from the Amazon OAuth token endpoint
 type AmazonAuthTokenResponse struct {
 	AccessToken  string `json:"access_token"`
@@ -204,6 +205,7 @@ func (sdk *AmazonSDK) GetBatchItemOffers(ctx context.Context, accessToken string
 	}
 	return &resp, nil
 }
+
 // GetCatalogItems calls the Amazon SP API Catalog Items endpoint
 func (sdk *AmazonSDK) GetCatalogItems(ctx context.Context, accessToken string, params CatalogItemsRequestParams) (*CatalogItemsResponse, error) {
 	var resp CatalogItemsResponse
@@ -224,6 +226,30 @@ func (sdk *AmazonSDK) GetCatalogItems(ctx context.Context, accessToken string, p
 	}
 	if !r.IsSuccessState() {
 		return nil, fmt.Errorf("failed to get catalog items: %s", r.String())
+	}
+	return &resp, nil
+}
+
+// GetListingsRestrictions calls the Amazon SP API Listings Restrictions endpoint
+func (sdk *AmazonSDK) GetListingsRestrictions(ctx context.Context, accessToken string, params ListingsRestrictionsRequestParams) (*ListingsRestrictionsResponse, error) {
+	var resp ListingsRestrictionsResponse
+	r, err := req.C().R().
+		SetContext(ctx).
+		SetHeader("x-amz-access-token", accessToken).
+		SetHeader("user-agent", "elevate-seller").
+		SetQueryParams(map[string]string{
+			"asin":           params.ASIN,
+			"conditionType":  params.ConditionType,
+			"sellerId":       params.SellerID,
+			"marketplaceIds": params.MarketplaceIds,
+		}).
+		SetSuccessResult(&resp).
+		Get(PROD_API_ENDPOINT + "/listings/2021-08-01/restrictions")
+	if err != nil {
+		return nil, err
+	}
+	if !r.IsSuccessState() {
+		return nil, fmt.Errorf("failed to get listings restrictions: %s", r.String())
 	}
 	return &resp, nil
 }

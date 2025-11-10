@@ -74,3 +74,34 @@ type CatalogItem struct {
 	} `json:"summaries"`
 }
 
+// ListingsRestrictionsRequestParams holds the query parameters for GetListingsRestrictions
+type ListingsRestrictionsRequestParams struct {
+	ASIN           string // Required: The ASIN to check restrictions for
+	ConditionType  string // Required: The condition type (e.g., "new_new")
+	SellerID       string // Required: The seller ID
+	MarketplaceIds string // Required: Comma-separated marketplace IDs
+}
+
+// ListingsRestrictionsResponse represents the response from the GetListingsRestrictions API
+type ListingsRestrictionsResponse struct {
+	Restrictions []Restriction `json:"restrictions"`
+}
+
+type Restriction struct {
+	MarketplaceID string   `json:"marketplaceId"`
+	ConditionType string   `json:"conditionType"`
+	Reasons       []Reason `json:"reasons"`
+}
+
+type Reason struct {
+	ReasonCode string `json:"reasonCode"`
+	Message    string `json:"message"`
+	Links      []Link `json:"links"`
+}
+
+type Link struct {
+	Resource string `json:"resource"`
+	Verb     string `json:"verb"`
+	Title    string `json:"title"`
+	Type     string `json:"type"`
+}
